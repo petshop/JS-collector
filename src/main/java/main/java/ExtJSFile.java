@@ -2,15 +2,21 @@ package main.java;
 
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 class ExtJSFile {
+    private static final String CRM_JS_FILES_COLLECTOR_PROPERTIES = "/src/main/resources/jsFilesCollector.properties";
+    private static final String TARGET = "target";
+    private static final String REPLACE = "replace";
+
     String name;
     String path;
     String allContent;
@@ -21,7 +27,7 @@ class ExtJSFile {
 
     boolean alreadyWritten = false;
 
-    public ExtJSFile(File file) throws Exception {
+    public ExtJSFile(File file, String baseDir) throws Exception {
 
         path = JsFilesCollector.useSandboxData
                 ? file.getPath().replace("extjs6-sandbox", "CRM")
@@ -29,13 +35,57 @@ class ExtJSFile {
 
         name = ExtJSFile.getFileName(path);
 
-        allContent = JsFilesCollector.useSandboxData
-                ? ExtJSFile.getAllContent(file).replaceAll("Ext6\\.", "Ext.")
-                : ExtJSFile.getAllContent(file);
+        String allContent = ExtJSFile.getAllContent(file);
+        this.allContent = JsFilesCollector.useSandboxData
+                ? getReplacedContent(allContent, baseDir)
+                : allContent;
 
         setRequiresAndContentWithoutRequires();
         setRequiresList();
         setExtended();
+    }
+
+    private String getReplacedContent(String content, String baseDir) {
+
+        Map<String, String> currentReplacements = getReplacements(baseDir);
+        if (isBlank(content) || currentReplacements.isEmpty()) {
+            return content;
+        }
+
+        for (Map.Entry<String, String> entry : currentReplacements.entrySet()) {
+            content = content.replaceAll(entry.getKey(), entry.getValue());
+        }
+        return content;
+    }
+
+    private Map<String, String> getReplacements(String baseDir) {
+        Properties properties = new Properties();
+        try {
+            properties.load(new FileInputStream(baseDir + CRM_JS_FILES_COLLECTOR_PROPERTIES));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String[] targets = getStringsProperty(properties, TARGET);
+        String[] replacements = getStringsProperty(properties, REPLACE);
+
+        if (targets.length != replacements.length) {
+            System.out.println("Target and replace size not equals");
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> result = new HashMap<>();
+        for (int i = 0; i < targets.length; i++) {
+            String key = targets[i].replace("\"", "");
+            String value = replacements[i].replace("\"", "");
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    private String[] getStringsProperty(Properties properties, String propertyName) {
+        String target = properties.getProperty(propertyName);
+        return target.split(",");
     }
 
     private static String getFileName(String absolutePath) {
