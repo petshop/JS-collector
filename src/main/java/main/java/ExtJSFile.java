@@ -91,7 +91,7 @@ class ExtJSFile {
     private static String getFileName(String absolutePath) {
         Path pathRelative = Paths.get(JsFilesCollector.root).relativize(Paths.get(absolutePath));
         String pathRelativeString = pathRelative.toString();
-        pathRelativeString = pathRelativeString.replace("/", ".");
+        pathRelativeString = pathRelativeString.replace(File.separator, ".");
         pathRelativeString = pathRelativeString.replace(".js", "");
         return JsFilesCollector.appName + pathRelativeString;
     }

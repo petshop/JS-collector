@@ -4,11 +4,23 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.io.File.separator;
 import static main.java.Constants.JETTY_PORT;
 
 public class JsFilesCollector {
 
-    private static final String RESOURCES_EXTJS_6_SANDBOX_APP = "/src/main/webapp/resources/extjs6-sandbox/app";
+    private static final String SRC = "src";
+    private static final String MAIN = "main";
+    private static final String APP = "app";
+    private static final String WEBAPP = "webapp";
+    private static final String RESOURCES = "resources";
+    private static final String EXTJS_6_SANDBOX = "extjs6-sandbox";
+    private static final String TARGET = "target";
+    private static final String ADMIN_DASHBOARD = "admin-dashboard";
+    private static final String CRM = "CRM";
+    private static final String RESOURCES_EXTJS_6_SANDBOX_APP = separator + SRC + separator + MAIN + separator + WEBAPP +
+            separator + RESOURCES + separator + EXTJS_6_SANDBOX + separator + APP;
+
     static StringBuilder sb;
     static String root;
     static String outFile;
@@ -58,7 +70,7 @@ public class JsFilesCollector {
             writeFile(key);
         }
         if (!extJSFile.alreadyWritten) {
-            sb.append(extJSFile.contentWithoutRequires).append("\n");
+            sb.append(extJSFile.contentWithoutRequires).append(System.lineSeparator());
             extJSFile.alreadyWritten = true;
         }
     }
@@ -76,7 +88,7 @@ public class JsFilesCollector {
             BufferedReader br = new BufferedReader(new FileReader(tempFile));
             String st;
             while ((st = br.readLine()) != null) {
-                contentBuilder.append(st).append("\n");
+                contentBuilder.append(st).append(System.lineSeparator());
             }
             return contentBuilder;
         } catch (IOException e) {
@@ -87,24 +99,25 @@ public class JsFilesCollector {
 
     private static boolean generateCollectiveFile(Boolean addReloadScript)
             throws FileNotFoundException, UnsupportedEncodingException {
-        String reloadScript = "function webSocketStart() {\n" +
-                "\n" +
-                "\tvar ws = new WebSocket(\"ws://localhost:" + JETTY_PORT + "/events/\");\n" +
-                "\n" +
-                "\tws.onmessage = function(event) {                   \n" +
-                "\t\twindow.location.reload(true);\n" +
-                "\t};\n" +
-                "\n" +
-                "\tsetInterval(function() { \n" +
-                "\n" +
-                "\t\ttry {\n" +
-                "\t\t\tws.send('something');\n" +
-                "\t\t} catch(err) { \n" +
-                "\t\t}\n" +
-                "\t\t\n" +
-                "\t}, 10 * 1000);\n" +
-                "}\n" +
-                "\n" +
+        String separator = System.lineSeparator();
+        String reloadScript = "function webSocketStart() {" +
+                separator +
+                "\tvar ws = new WebSocket(\"ws://localhost:" + JETTY_PORT + "/events/\");" +
+                separator +
+                "\tws.onmessage = function(event) { " + separator +
+                "\t\twindow.location.reload(true);" + separator +
+                "\t};" +
+                separator +
+                "\tsetInterval(function() { " +
+                separator +
+                "\t\ttry {" + separator +
+                "\t\t\tws.send('something');" + separator +
+                "\t\t} catch(err) { " + separator +
+                "\t\t}" + separator +
+                "\t\t" + separator +
+                "\t}, 10 * 1000);" + separator +
+                "}" +
+                separator +
                 "webSocketStart();";
         sb = new StringBuilder();
 
@@ -144,15 +157,15 @@ public class JsFilesCollector {
     }
 
     private static String getAppName() throws Exception {
-        if (root.contains("extjs6-sandbox")) {
+        if (root.contains(EXTJS_6_SANDBOX)) {
             useSandboxData = false;
-            return "CRM.";
+            return CRM + ".";
         }
-        if (root.contains("CRM")) {
+        if (root.contains(CRM)) {
             useSandboxData = true;
-            return "CRM.";
+            return CRM + ".";
         }
-        if (root.contains("admin-dashboard")) {
+        if (root.contains(ADMIN_DASHBOARD)) {
             useSandboxData = false;
             return "AdminDashboard.";
         } else {
@@ -164,11 +177,11 @@ public class JsFilesCollector {
         String[] args = new String[6];
 
         args[0] = basedir + RESOURCES_EXTJS_6_SANDBOX_APP;
-        args[1] = basedir + "/target/" + targetDirectoryName + "/resources/extjs6-sandbox/appCollective.js";
-        args[2] = basedir + "/src/main/webapp/resources/admin-dashboard/app";
-        args[3] = basedir + "/target/" + targetDirectoryName + "/resources/admin-dashboard/appDashboardCollective.js";
-        args[4] = basedir + "/src/main/webapp/resources/CRM/app";
-        args[5] = basedir + "/target/" + targetDirectoryName + "/resources/CRM/appCRMCollective.js";
+        args[1] = basedir + separator + TARGET + separator + targetDirectoryName + separator + RESOURCES + separator + EXTJS_6_SANDBOX + separator + "appCollective.js";
+        args[2] = basedir + separator + SRC + separator + MAIN + separator + WEBAPP + separator + RESOURCES + separator + ADMIN_DASHBOARD + separator + APP;
+        args[3] = basedir + separator + TARGET + separator + targetDirectoryName + separator + RESOURCES + separator + ADMIN_DASHBOARD + separator + "appDashboardCollective.js";
+        args[4] = basedir + separator + SRC + separator + MAIN + separator + WEBAPP + separator + RESOURCES + separator + CRM + separator + APP;
+        args[5] = basedir + separator + TARGET + separator + targetDirectoryName + separator + RESOURCES + separator + CRM + separator + "appCRMCollective.js";
 
         return (utilRun(args[0], args[1], basedir, true)
                 & utilRun(args[2], args[3], basedir, true)
